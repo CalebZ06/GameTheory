@@ -43,7 +43,7 @@ class TitForTat : public Player {
 class GameTheory {
     public:
         int Round = 0;
-        int maxRounds = 10; // Maximum number of rounds
+        int maxRounds; // Maximum number of rounds
         Player* player1;
         Player* player2;
 
