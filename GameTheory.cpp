@@ -1,10 +1,12 @@
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
+#include <random>
 
 class Player {
     public:
         int score = 0; // Initialize score to 0
+        int EnemyScore = 0; // Initialize EnemyScore to 0
         int PrvEnemyMove = 1; // Initialize PreviousMove to -1
         int Round = 0; // Initialize Round to 0
 
@@ -15,7 +17,10 @@ class Player {
 class Random : public Player {
     public:
         int ReturnMove() {
-            return rand() % 2; // Randomly returns 0 or 1
+            static std::random_device rd; // Seed for random number generation
+            static std::mt19937 gen(rd()); // Mersenne Twister random number generator
+            static std::uniform_int_distribution<> dist(0, 1); // Uniform distribution between 0 and 1
+            return dist(gen); // Generate a random number (0 or 1)
         }
 };
 
@@ -39,12 +44,22 @@ class TitForTat : public Player {
             return PrvEnemyMove; // Returns the previous move of the opponent
         }
 };
+class DefectWhenLosing : public Player {
+    public :
+        int ReturnMove() {
+            if (EnemyScore > score) {
+                return 0;
+            } else {
+                return 1;
+            }
+        }
+};
 
 class GameTheory {
     public:
         int Round = 0;
         int maxRounds = 5; // Maximum number of rounds
-        int** score;
+        int** scoreTable; // Score table for different strategies
         Player* player1;
         Player* player2;
 
@@ -53,17 +68,21 @@ class GameTheory {
             player2 = Player2;
             maxRounds = MaxRounds; // Set maximum rounds
 
-            score = new int*[2];
+            scoreTable = new int*[2];
             for (int i = 0; i < 2; i++) {
-                score[i] = new int[2];
+                scoreTable[i] = new int[maxRounds]; // Allocate memory for scores
+                for (int j = 0; j < maxRounds; j++) {
+                    scoreTable[i][j] = 0; // Initialize scores to 0
+                    // Note: The size of each row is determined by the variable 'maxRounds'.
+                }
             }
         }
 
         ~GameTheory() {
             for (int i = 0; i < 2; i++) {
-                delete[] score[i];
+                delete[] scoreTable[i];
             }
-            delete[] score;
+            delete[] scoreTable;
         }
 
         void DefectWin() {
@@ -103,6 +122,16 @@ class GameTheory {
             std::cout << " Player 2 Score: " << player2->score << std::endl;
         }
 
+        void PrintScoreTable() {
+            std::cout << "Score Table:" << std::endl;
+            for (int i = 0; i < 2; i++) {
+                for (int j = 0; j < maxRounds; j++) {
+                    std::cout << scoreTable[i][j] << " ";
+                }
+                std::cout << std::endl;
+            }
+        }
+
         void PlayRound() {
             int Move1 = player1->ReturnMove();
             int Move2 = player2->ReturnMove();
@@ -119,6 +148,14 @@ class GameTheory {
             } else if (Move1 == 1 && Move2 == 0) {
                 DefectLose();
             }
+
+            player1->EnemyScore = player2->score; // Update enemy score for player1
+            player2->EnemyScore = player1->score; // Update enemy score for player2
+
+            scoreTable[0][Round] = Move1; // Store scores in the score table
+            scoreTable[1][Round] = Move2;
+            Round++;
+
         }
         void PlayGame() {
             while (Round < maxRounds) { // Play 10 rounds
@@ -139,11 +176,13 @@ int main() {
     srand(time(0)); // Seed for random number generation
 
     Random player1;
-    TitForTat player2;
+    Random player2;
 
-    GameTheory game(&player1, &player2, 40);
+    GameTheory game(&player1, &player2, 10);
 
     game.PlayGame(); // Start the game
+    game.PrintScores(); // Print final scores
+    game.PrintScoreTable(); // Print score table
     std::cout << "Game Over!" << std::endl;
 
     return 0;
