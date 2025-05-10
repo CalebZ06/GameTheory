@@ -43,7 +43,8 @@ class TitForTat : public Player {
 class GameTheory {
     public:
         int Round = 0;
-        int maxRounds; // Maximum number of rounds
+        int maxRounds = 5; // Maximum number of rounds
+        int** score;
         Player* player1;
         Player* player2;
 
@@ -51,6 +52,18 @@ class GameTheory {
             player1 = Player1;
             player2 = Player2;
             maxRounds = MaxRounds; // Set maximum rounds
+
+            score = new int*[2];
+            for (int i = 0; i < 2; i++) {
+                score[i] = new int[2];
+            }
+        }
+
+        ~GameTheory() {
+            for (int i = 0; i < 2; i++) {
+                delete[] score[i];
+            }
+            delete[] score;
         }
 
         void DefectWin() {
